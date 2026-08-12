@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {
-  companies, investors, pipeline,
-  companyMetrics, capTableHistory, investorPosition, investorSummary, fundTotals,
+  pipeline, investorSummary, fundTotals,
   fmtM, fmtPct, fmtX,
 } from './data.js'
+import { WORKFLOWS, WorkflowRun } from './workflows.jsx'
 
 // The copilot is deliberately secondary: the standing dashboard is the source
 // of truth, and each prompt both answers from the same dataset and drives the
@@ -15,49 +15,11 @@ const daysSince = (iso) => Math.round((TODAY - new Date(iso)) / 86_400_000)
 function buildPrompts(go) {
   return [
     {
-      label: 'Simulate dilution: Restora raises a $30M Series C',
-      run: () => {
-        const c = companies.find((x) => x.id === 'restora')
-        const m = companyMetrics(c)
-        const pre = 130, raise = 30, post = pre + raise
-        const proRata = m.ownership * raise
-        const ownAfter = m.ownership * (pre / post) + proRata / post
-        go({ view: 'company', id: 'restora', tab: 'sim' })
-        return `Restora's simulator is open. At $130M pre / ${fmtM(post)} post, a $30M round dilutes the syndicate from ${fmtPct(m.ownership)} to ${fmtPct(m.ownership * (pre / post))} if we sit out, or holds us at ${fmtPct(ownAfter)} with a ${fmtM(proRata)} pro-rata check. Stake value at the new mark: ${fmtM(ownAfter * post)}. Drag the sliders to test other terms — the math updates live.`
-      },
-    },
-    {
       label: 'How is the fund positioned right now?',
       run: () => {
         const t = fundTotals()
         go({ view: 'overview' })
         return `Standing view: ${t.per.length} investments, ${fmtM(t.invested)} deployed, marked at ${fmtM(t.currentValue)} with ${fmtM(t.realized)} already distributed (DPI ${fmtX(t.dpi)}, TVPI ${fmtX(t.tvpi)}). ${t.activeDiligence} deals are in active diligence, and the largest allocation is ${t.allocation[0].segment} at ${fmtPct(t.allocation[0].share, 0)} of invested capital. Every tile on the overview clicks through to the detail behind it.`
-      },
-    },
-    {
-      label: "Explain Restora's cap-table history",
-      run: () => {
-        const c = companies.find((x) => x.id === 'restora')
-        const caps = capTableHistory(c)
-        const last = caps[caps.length - 1]
-        go({ view: 'company', id: 'restora', tab: 'captable' })
-        return `Restora's cap-table page is open. Across Seed → Series A → Series B the syndicate built up to ${fmtPct(last.us)} fully diluted, while founders diluted to ${fmtPct(last.founders)} and other investors hold ${fmtPct(last.others)}. Each bar is reconstructed from the executed agreements listed under source documents — in the live system every figure links to the clause it came from.`
-      },
-    },
-    {
-      label: 'Which co-investor has the most mental-health exposure?',
-      run: () => {
-        let best = null
-        for (const inv of investors) {
-          const exp = companies
-            .filter((c) => c.segment === 'Mental health')
-            .map((c) => investorPosition(c, inv.id))
-            .filter(Boolean)
-            .reduce((s, p) => s + p.invested, 0)
-          if (!best || exp > best.exp) best = { inv, exp }
-        }
-        go({ view: 'investor', id: best.inv.id })
-        return `${best.inv.name} — ${fmtM(best.exp)} invested across the mental-health positions (Kinetic Mind, Sagelight, Calmora, MindTide). Their entity page is open: per-company invested amounts, look-through ownership, current value and realized proceeds, plus the quarterly report preview.`
       },
     },
     {
@@ -89,12 +51,13 @@ export default function Copilot({ go, open, onClose }) {
   ])
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
+  const [tick, setTick] = useState(0)
   const logRef = useRef(null)
   const prompts = buildPrompts(go)
 
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
-  }, [messages, busy])
+  }, [messages, busy, tick])
 
   const ask = (label, runner) => {
     if (busy) return
@@ -107,6 +70,12 @@ export default function Copilot({ go, open, onClose }) {
       setMessages((m) => [...m, { role: 'ai', text }])
       setBusy(false)
     }, 400)
+  }
+
+  const runWorkflow = (wf) => {
+    if (busy) return
+    setBusy(true)
+    setMessages((m) => [...m, { role: 'user', text: wf.label }, { role: 'run', wfId: wf.id }])
   }
 
   const submit = (e) => {
@@ -128,17 +97,39 @@ export default function Copilot({ go, open, onClose }) {
       </div>
 
       <div className="copilot-body" ref={logRef} aria-live="polite">
-        {messages.map((m, i) => (
-          <div key={i} className={`msg ${m.role}`}>
-            {m.role === 'ai' && <span className="msg-tag">Copilot</span>}
-            {m.text}
-          </div>
-        ))}
-        {busy && <div className="msg ai" aria-label="Working">…</div>}
+        {messages.map((m, i) => {
+          if (m.role === 'run') {
+            const wf = WORKFLOWS.find((w) => w.id === m.wfId)
+            return (
+              <WorkflowRun
+                key={i}
+                wf={wf}
+                go={go}
+                onTick={() => setTick((t) => t + 1)}
+                onDone={() => setBusy(false)}
+              />
+            )
+          }
+          return (
+            <div key={i} className={`msg ${m.role}`}>
+              {m.role === 'ai' && <span className="msg-tag">Copilot</span>}
+              {m.text}
+            </div>
+          )
+        })}
+        {busy && messages[messages.length - 1]?.role !== 'run' && (
+          <div className="msg ai" aria-label="Working">…</div>
+        )}
       </div>
 
       <div className="prompts" role="group" aria-label="Example prompts">
-        <span className="prompts-label">Try asking</span>
+        <span className="prompts-label">Deep analyses — multi-step</span>
+        {WORKFLOWS.map((wf) => (
+          <button key={wf.id} className="prompt-chip deep" disabled={busy} onClick={() => runWorkflow(wf)}>
+            {wf.label}
+          </button>
+        ))}
+        <span className="prompts-label" style={{ marginTop: 6 }}>Quick questions</span>
         {prompts.map((p) => (
           <button key={p.label} className="prompt-chip" disabled={busy} onClick={() => ask(p.label, p.run)}>
             {p.label}

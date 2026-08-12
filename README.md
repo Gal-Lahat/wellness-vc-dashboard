@@ -26,6 +26,28 @@ is no backend — everything runs locally on an illustrative dataset.
 | Due diligence: data room, legal docs, investment memorandum | Deal page — documents (data room index, legal, memo drafts), open questions, next action |
 | Follow-up reminders | Overview "needs attention" tiles; copilot prompt "Any deals waiting on a follow-up?" |
 | AI on the side: "a place to send a query", incl. cap-table graphs & dilution simulations | **Copilot panel** — clickable prompts that compute from the same dataset and drive the dashboard to the answer |
+| "Sensitivity analyses, simulations, cross-referencing" as agent work | Copilot **deep analyses** — six multi-step workflows (below) with visible execution steps and real charts |
+
+## Copilot deep analyses
+
+Six advanced prompts run a visible, deterministic execution panel (3–6 steps:
+retrieve → join → compute → compare → render), then produce a real SVG/CSS
+visualization plus evidence rows that link into the relevant company, investor
+or deal view. Everything is **simulated analysis over the illustrative records
+in `data.js`** — nothing external is fetched, and the panel says so.
+
+1. **Concentration stress test** — stage-weighted downside by segment, with a
+   before/after paired-bar chart and the most-affected companies.
+2. **Follow-on candidates** — joins runway, QoQ growth, mark-vs-last-round,
+   ownership headroom and watch-outs into a ranked runway × growth scatter.
+3. **Investor exposure report** (Arden) — look-through positions by segment,
+   realized exits, and the largest dilution event, linking to the cap table.
+4. **Financing-scenario comparison** (Restora) — up / flat / down round
+   ownership curves with the round math, linking to the live simulator.
+5. **Portfolio health review** — growth / runway / mark / update-freshness risk
+   heatmap over all active companies, worst first (glyphs, not color alone).
+6. **Pipeline ↔ portfolio conflicts** — bipartite overlap map of competition,
+   adjacency and referral edges with relationship evidence per edge.
 
 ## Run it
 
@@ -48,8 +70,10 @@ src/
   data.js            # illustrative dataset + derivations (round math, cap-table
                      #   history, per-investor look-through, fund totals, formatting)
   charts.jsx         # SVG charts: line w/ crosshair+tooltip, stacked bars, valuation chart
+  workflows.jsx      # copilot deep analyses: step engine + scatter/heatmap/overlap-map/
+                     #   paired-bars/ownership-curve visualizations
   App.jsx            # shell, sidebar nav, hash routing
-  Copilot.jsx        # side-panel copilot with example prompts wired to the data
+  Copilot.jsx        # side-panel copilot: quick prompts + multi-step workflow runner
   views/
     Overview.jsx     # standing fund dashboard
     Portfolio.jsx    # 15-investment list with active/exited filter

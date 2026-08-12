@@ -286,6 +286,67 @@ input[type='range'] { width: 100%; accent-color: var(--brand); }
 }
 .copilot-input button:hover { background: var(--brand-ink); }
 
+.prompts { max-height: 34vh; overflow-y: auto; }
+.prompt-chip.deep { border-left: 3px solid var(--brand); }
+
+/* ---- Copilot workflow execution panel ---- */
+.run-card {
+  border: 1px solid var(--hairline); border-left: 3px solid var(--brand);
+  border-radius: 8px; background: var(--surface-2); padding: 11px 13px; font-size: 12.5px;
+}
+.run-head { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
+.run-head strong { font-size: 12.5px; line-height: 1.35; }
+.run-tag { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.run-steps { list-style: none; margin: 0 0 4px; padding: 0; }
+.run-steps li { display: flex; gap: 8px; align-items: baseline; padding: 2.5px 0; color: var(--muted); }
+.run-steps li.active { color: var(--ink); }
+.run-steps li.done { color: var(--ink-2); }
+.run-steps .step-mark { width: 13px; flex: none; text-align: center; font-size: 10px; }
+.run-steps li.done .step-mark { color: var(--good-text); }
+.run-steps li.active .step-mark { color: var(--brand); }
+.run-result { border-top: 1px solid var(--hairline); margin-top: 8px; padding-top: 10px; }
+.run-intro { margin: 0 0 10px; line-height: 1.55; }
+.run-viz { background: var(--surface); border: 1px solid var(--hairline); border-radius: 6px; padding: 10px; }
+.run-viz svg { display: block; width: 100%; height: auto; }
+.run-viz .stack-row { grid-template-columns: 92px 1fr 48px; margin-bottom: 6px; }
+.run-viz .stack-label { font-size: 10.5px; }
+.ev-list { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; }
+.ev-row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  font-size: 11.5px; color: var(--ink-2); line-height: 1.45;
+  border-bottom: 1px solid var(--hairline); padding-bottom: 5px;
+}
+.ev-row:last-child { border-bottom: 0; }
+.ev-link {
+  background: none; border: 0; padding: 0; cursor: pointer; flex: none;
+  color: var(--brand-ink); font-size: 11.5px; font-weight: 600;
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--baseline);
+}
+.ev-link:hover { text-decoration-color: var(--brand-ink); }
+.run-action {
+  display: block; width: 100%; margin-top: 9px; text-align: left; cursor: pointer;
+  background: var(--wash); border: 1px solid #cdd8c7; border-radius: 6px;
+  padding: 7px 11px; font-size: 12px; color: var(--brand-ink); font-weight: 600;
+}
+.run-action:hover { border-color: var(--brand); }
+
+/* Paired before/after bars */
+.pair-row { display: grid; grid-template-columns: 88px 1fr; gap: 3px 10px; margin-bottom: 9px; align-items: center; }
+.pair-label { font-size: 10.5px; color: var(--ink-2); line-height: 1.25; }
+.pair-bars { display: flex; flex-direction: column; gap: 2px; }
+.pair-bar { display: block; height: 8px; border-radius: 0 3px 3px 0; min-width: 2px; }
+.pair-vals { grid-column: 2; font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Risk heatmap */
+.heatmap { display: grid; gap: 3px; align-items: stretch; }
+.hm-head { font-size: 9px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); text-align: center; align-self: end; padding-bottom: 2px; }
+.hm-name {
+  background: none; border: 0; padding: 0 4px 0 0; cursor: pointer; text-align: left;
+  font-size: 10.5px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hm-name:hover { color: var(--brand-ink); text-decoration: underline; text-underline-offset: 2px; }
+.hm-cell { display: flex; align-items: center; justify-content: center; border-radius: 3px; font-size: 9.5px; min-height: 18px; }
+
 .copilot-fab { display: none; }
 
 /* ---- Responsive ---- */

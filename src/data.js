@@ -202,14 +202,14 @@ export const companies = [
       { name: 'Series A', date: '2023-01', pre: 24, raised: 8, check: 1.2, mix: MIX_C },
     ],
     quarterly: {
-      period: 'Q2 2026',
+      period: 'Q1 2026 (latest received)',
       revenueRun: '$5.2M revenue run-rate, +4% QoQ', cash: '16 months runway',
       highlights: ['Municipal program renewed in 3 cities.'],
-      watchouts: ['Reimbursement policy change under review.'],
+      watchouts: ['Reimbursement policy change under review.', 'No Q2 update received yet — chased twice.'],
     },
     docs: [
       { name: 'Series A — SPA.pdf', kind: 'Agreement', date: '2023-01-19' },
-      { name: 'Q2 2026 investor update.pdf', kind: 'Update', date: '2026-07-06' },
+      { name: 'Q1 2026 investor update.pdf', kind: 'Update', date: '2026-04-06' },
     ],
   },
   {
@@ -239,14 +239,14 @@ export const companies = [
       { name: 'Seed', date: '2021-07', pre: 8, raised: 2.5, check: 0.7, mix: MIX_E },
     ],
     quarterly: {
-      period: 'Q2 2026',
+      period: 'Q1 2026 (latest received)',
       revenueRun: '$1.1M ARR, flat QoQ', cash: '8 months runway',
       highlights: ['Pivoted to channel sales via insurers.'],
-      watchouts: ['Held at cost internally pending pivot evidence; growth stalled two quarters.'],
+      watchouts: ['Held at cost internally pending pivot evidence; growth stalled two quarters.', 'Q2 update overdue.'],
     },
     docs: [
       { name: 'Seed — SPA.pdf', kind: 'Agreement', date: '2021-07-22' },
-      { name: 'Q2 2026 investor update.pdf', kind: 'Update', date: '2026-07-19' },
+      { name: 'Q1 2026 investor update.pdf', kind: 'Update', date: '2026-04-19' },
     ],
   },
   {
@@ -341,6 +341,9 @@ export const pipeline = [
     openQuestions: ['Retention beyond 90 days?', 'Regulated-claim exposure on hormone guidance?'],
     docs: [{ name: 'Intro deck (12 slides).pdf', kind: 'Deck', date: '2026-08-01' }],
     nextAction: { what: 'Second partner meeting', when: '2026-08-18' },
+    links: [
+      { companyId: 'ovacare', kind: 'adjacent', note: 'Both sell into the women’s-health employer channel; OvaCare CMO knows the founder.' },
+    ],
   },
   {
     id: 'fernhealth', company: 'Fern Health Kitchens', segment: 'Nutrition & metabolic',
@@ -364,6 +367,10 @@ export const pipeline = [
       { name: 'Clinical validation summary.pdf', kind: 'Clinical', date: '2026-08-05' },
     ],
     nextAction: { what: 'Reference calls (2 clinicians)', when: '2026-08-15' },
+    links: [
+      { companyId: 'restora', kind: 'competes', note: 'Home diagnostics could cannibalize Restora’s clinic intake funnel — flagged in open questions.' },
+      { companyId: 'restora', kind: 'referred', note: 'Introduced by the Restora founder (portfolio referral).' },
+    ],
   },
   {
     id: 'vitalpath', company: 'VitalPath', segment: 'Clinics & longevity',
@@ -374,6 +381,10 @@ export const pipeline = [
     openQuestions: ['Is the buyer the clinic or the physician group?', 'Pipeline beyond the 3 design partners?'],
     docs: [{ name: 'Product demo notes.pdf', kind: 'Notes', date: '2026-07-28' }],
     nextAction: { what: 'Follow-up: pipeline data room', when: '2026-08-20' },
+    links: [
+      { companyId: 'solstice', kind: 'referred', note: 'Founder is an ex-Solstice engineering lead; intro by the Solstice CEO.' },
+      { companyId: 'solstice', kind: 'adjacent', note: 'Would become a vendor to Solstice clinics — customer-conflict check needed.' },
+    ],
   },
   {
     id: 'thermwell', company: 'Thermwell', segment: 'Movement & recovery',
@@ -402,6 +413,9 @@ export const pipeline = [
       { name: 'Cohort retention export.xlsx', kind: 'Financial', date: '2026-08-09' },
     ],
     nextAction: { what: 'Draft investment memorandum', when: '2026-08-22' },
+    links: [
+      { companyId: 'verdebiome', kind: 'adjacent', note: 'Gut-health overlap with VerdeBiome’s microbiome programs — competition memo section required.' },
+    ],
   },
   {
     id: 'briochem', company: 'BrioChem', segment: 'Clinics & longevity',
@@ -429,6 +443,10 @@ export const pipeline = [
       { name: 'Data room index.pdf', kind: 'Data room', date: '2026-07-12' },
     ],
     nextAction: { what: 'IC vote', when: '2026-08-19' },
+    links: [
+      { companyId: 'kinetic', kind: 'referred', note: 'Introduced through the Kinetic Mind chair (portfolio network).' },
+      { companyId: 'stridewell', kind: 'adjacent', note: 'Post-surgical recovery touches Stridewell’s MSK rehab pathway — partner overlap, not head-on.' },
+    ],
   },
   {
     id: 'plumeria', company: 'Plumeria Care', segment: 'Femtech & family',
@@ -557,6 +575,32 @@ export function fundTotals() {
     .map(([segment, amount]) => ({ segment, amount, share: amount / invested }))
     .sort((a, b) => b.amount - a.amount)
   return { per, invested, currentValue, realized, dpi, tvpi, active, exited, activeDiligence, allocation }
+}
+
+// Reference "today" for the mockup — keeps every derived age deterministic.
+export const REF_DATE = '2026-08-12'
+
+// Quarterly signals derived from the records already on file (update letters,
+// board decks, round agreements) — used by the copilot's analysis workflows.
+export function qSignals(company) {
+  if (company.status === 'exited') return null
+  const q = company.quarterly
+  const runway = Number((/(\d+)\s*months/.exec(q.cash) || [])[1] || 0)
+  const growth = /flat/i.test(q.revenueRun)
+    ? 0
+    : Number((/([+-]?\d+)% QoQ/.exec(q.revenueRun) || [])[1] || 0)
+  const upd = company.docs.find((d) => d.kind === 'Update')
+  const updateAgeDays = upd
+    ? Math.round((new Date(REF_DATE) - new Date(upd.date)) / 86_400_000)
+    : null
+  const rounds = enrichRounds(company)
+  const lastPost = rounds[rounds.length - 1].post
+  const markTrend = (company.currentValuation ?? lastPost) / lastPost
+  return {
+    runway, growth, updateAgeDays, markTrend, lastPost,
+    updateDoc: upd ? upd.name : null,
+    watchouts: q.watchouts.length,
+  }
 }
 
 // --- Formatting --------------------------------------------------------------
